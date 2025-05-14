@@ -11,33 +11,23 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Load all API keys from environment
-const apiKeys = process.env.COHERE_KEYS.split(',');
-let currentKeyIndex = 0;
-
-// Function to get next API key in round-robin
-function getNextApiKey() {
-    const key = apiKeys[currentKeyIndex];
-    currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
-    return key;
-}
+// Your Cohere API Key from .env file
+const COHERE_API_KEY = process.env.COHERE_API_KEY;
 
 // Function to call Cohere API
 async function makeApiRequest(userMessage) {
     try {
-        const apiKey = getNextApiKey();
-
         const response = await axios.post(
             'https://api.cohere.ai/v1/chat',
             {
                 message: userMessage,
-                model: 'command-r',
+                model: 'command-r', // You can also try 'command-r-plus' if you have access
                 temperature: 0.7,
                 stream: false
             },
             {
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
+                    'Authorization': `Bearer ${COHERE_API_KEY}`,
                     'Content-Type': 'application/json'
                 }
             }
@@ -50,20 +40,22 @@ async function makeApiRequest(userMessage) {
     }
 }
 
-// Route for frontend
+// Route for the frontend
 app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
 
     try {
         console.log('🗣️ Message received:', userMessage);
+
         const reply = await makeApiRequest(userMessage);
+
         res.json({ reply });
     } catch (err) {
         res.status(500).json({ error: 'Cohere API request failed.' });
     }
 });
 
-// Start server
+// Start your server
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+}); 
